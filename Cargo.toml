@@ -1,0 +1,9 @@
+[package]
+name = "Rust-Rogue-Like"
+version = "0.1.0"
+edition = "2021" # Tutorial is using 2018, might need to downgrade.
+
+[dependencies]
+rltk = { version = "0.8.0" } # Tutorial is using 0.8.0, might need to downgrade. 
+specs = "0.16.1" # ECS Engine.
+specs-derive = "0.4.1"
