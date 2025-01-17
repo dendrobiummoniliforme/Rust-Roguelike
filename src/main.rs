@@ -1,64 +1,20 @@
-use rltk::{Rltk, GameState, RGB, VirtualKeyCode};
+use rltk::{Rltk, GameState, RGB};
 use specs::prelude::*;
-use specs_derive::Component;
-use std::cmp::{max, min};
 
-mod map;
-pub use map::*;
+mod components;
+pub use components::*;
+mod map; // Tell this file that the module 'map' is located at ./
+pub use map::*; // Import the map module for us in this file
+mod player;
+use player::*;
+mod rect;
+use rect::*;
 
 struct State {
     ecs: World
 } // Braced struct declarations are not followed by a semi-colon.
 
-#[derive(Component)]
-struct Position {
-    x: i32,
-    y: i32,
-}
-
-#[derive(Component)]
-struct Renderable {
-    glyph: rltk::FontCharType,
-    fg: RGB,
-    bg: RGB,
-}
-
-#[derive(Component)]
-struct LeftMover {}
-
 struct LeftWalker {}
-
-#[derive(Component, Debug)]
-struct Player {}
-
-fn try_move_player(delta_x: i32, delta_y: i32, ecs: &mut World) {
-    let mut positions = ecs.write_storage::<Position>();
-    let mut players = ecs.write_storage::<Player>();
-    let map = ecs.fetch::<Vec<TileType>>(); // Feels odd to couple map to the player like this.
-
-    for (_player, pos) in (&mut players, &mut positions).join() {
-        let destination_idx = xy_idx(pos.x + delta_x, pos.y + delta_y);
-
-        // If we are not on a wall.
-        if map[destination_idx] != TileType::Wall {
-            pos.x = min(79, max(0, pos.x + delta_x));
-            pos.y = min(79, max(0, pos.y + delta_y));
-        }
-    }
-}
-
-fn player_input(gs: &mut State, ctx: &mut Rltk) {
-    match ctx.key {
-        None => {}
-        Some(key) => match key {
-            VirtualKeyCode:: Left => try_move_player(-1, 0, &mut gs.ecs),
-            VirtualKeyCode:: Right => try_move_player(1, 0, &mut gs.ecs),
-            VirtualKeyCode:: Up => try_move_player(0, -1, &mut gs.ecs),
-            VirtualKeyCode:: Down => try_move_player(0, 1, &mut gs.ecs),
-            _ => {}
-        }
-    }
-}
 
 impl<'a> System<'a> for LeftWalker {
     // Tell the system what data it needs access to, and what it needs to be able to
@@ -120,8 +76,10 @@ fn main() -> rltk::BError {
         .build()?;
     let mut gs = State{ ecs: World::new() };
 
-    gs.ecs.insert(new_map_test());
+    // Add map.
+    gs.ecs.insert(new_map_rooms_and_corridors());
 
+    // Register components.
     gs.ecs.register::<Position>();
     gs.ecs.register::<Renderable>();
     gs.ecs.register::<LeftMover>();
