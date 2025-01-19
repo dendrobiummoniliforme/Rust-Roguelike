@@ -20,3 +20,11 @@ pub struct Renderable {
 
 #[derive(Component)]
 pub struct LeftMover {}
+
+/// Viewshed means "what can I see from here?"
+#[derive(Component)]
+pub struct Viewshed {
+    pub visible_tiles: Vec<rltk::Point>,
+    pub dirty: bool,
+    pub range: i32,
+}
