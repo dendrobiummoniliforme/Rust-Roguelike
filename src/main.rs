@@ -61,7 +61,6 @@ fn main() -> rltk::BError {
     // Register components.
     gs.ecs.register::<Position>();
     gs.ecs.register::<Renderable>();
-    gs.ecs.register::<LeftMover>();
     gs.ecs.register::<Player>();
     gs.ecs.register::<Viewshed>();
  
@@ -90,7 +89,6 @@ fn main() -> rltk::BError {
             fg: RGB::named(rltk::RED),
             bg: RGB::named(rltk::BLACK),
         })
-        .with(LeftMover {})
         .build();
     }
 
