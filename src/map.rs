@@ -41,39 +41,6 @@ impl Map {
         }
     }
 
-    /// Makes a map with solid boundaries and 400 randomly placed walls. No guarentees that
-    /// it won't look awful.
-    pub fn new_map_test(&mut self) -> Vec<TileType> {
-        let mut map = vec![TileType::Floor; 80*50];
-        
-        for x in 0..80 {
-            map[self.xy_idx(x, 0)] = TileType::Wall;
-            map[self.xy_idx(x, 49)] = TileType::Wall;
-        }
-
-        for y in 0..50 {
-            map[self.xy_idx(0, y)] = TileType::Wall;
-            map[self.xy_idx(79, y)] = TileType::Wall;
-        }
-
-        // Now we will randomly splat a bunch of walls. It won't be pretty, 
-        // but it's a decent illustration.
-        // First, obtain te thread-local RNG:
-        let mut rng = rltk::RandomNumberGenerator::new();
-
-        for _i in 0..400 {
-            let x = rng.roll_dice(1, 79);
-            let y = rng.roll_dice(1, 49);
-            let idx = self.xy_idx(x, y);
-
-            if idx != self.xy_idx(40, 25) {
-                map[idx] = TileType::Wall;
-            }
-        }
-
-        map
-    }
-
     /// Makes a map with two rooms connected by corridors.
     /// Returns a list of rooms.
     pub fn new_map_rooms_and_corridors() -> Map {
