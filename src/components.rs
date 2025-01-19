@@ -18,9 +18,6 @@ pub struct Renderable {
     pub bg: RGB,
 }
 
-#[derive(Component)]
-pub struct LeftMover {}
-
 /// Viewshed means "what can I see from here?"
 #[derive(Component)]
 pub struct Viewshed {
