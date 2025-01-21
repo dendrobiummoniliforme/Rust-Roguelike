@@ -1,4 +1,4 @@
-use specs::prelude::*;
+use specs::{prelude::*, rayon::string};
 use specs_derive::*;
 use rltk::RGB;
 
@@ -24,4 +24,12 @@ pub struct Viewshed {
     pub visible_tiles: Vec<rltk::Point>,
     pub dirty: bool,
     pub range: i32,
+}
+
+#[derive(Component, Debug)]
+pub struct Monster {}
+
+#[derive(Component, Debug)]
+pub struct Name {
+    pub name: String
 }
