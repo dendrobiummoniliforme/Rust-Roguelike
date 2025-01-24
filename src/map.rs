@@ -121,6 +121,18 @@ impl Map {
         let idx = self.xy_idx(x, y);
         self.tiles[idx as usize] != TileType::Wall
     }
+}
+
+impl Algorithm2D for Map {
+    fn dimensions(&self) -> Point {
+        Point::new(self.width, self.height)
+    }
+}
+
+impl BaseMap for Map {
+    fn is_opaque(&self, idx: usize) -> bool {
+        self.tiles[idx as usize] == TileType::Wall
+    }
 
     fn get_available_exits(&self, idx: usize) -> rltk::SmallVec<[(usize, f32); 10]> {
         let mut exits = rltk::SmallVec::new();
@@ -143,18 +155,6 @@ impl Map {
         };
 
         exits
-    }
-}
-
-impl Algorithm2D for Map {
-    fn dimensions(&self) -> Point {
-        Point::new(self.width, self.height)
-    }
-}
-
-impl BaseMap for Map {
-    fn is_opaque(&self, idx: usize) -> bool {
-        self.tiles[idx as usize] == TileType::Wall
     }
 
     fn get_pathing_distance(&self, idx1: usize, idx2: usize) -> f32 {
