@@ -2,9 +2,11 @@ use specs::{prelude::*, rayon::string};
 use specs_derive::*;
 use rltk::RGB;
 
-use crate::TileType;
+use crate::{TetronimoTypeType, TileType};
 
-#[derive(Component, Debug)]
+use super::TetrisBlockType;
+
+#[derive(Component)]
 pub struct Player {}
 
 #[derive(Component)]
@@ -36,9 +38,13 @@ pub struct Name {
     pub name: String
 }
 
+// Holds the shape definition of a Tetris block.
+// Typically, each block has up to four squares offset from its origin.
 #[derive(Component)]
-pub struct Tetronimo {
-    pub shape: [[Option<TileType>; 4]; 4],
-    pub x: i32,
-    pub y: i32,
+pub struct TetrisBlock {
+    pub block_type: TetrisBlockType,
+    // Relative coordinates for each of the 4 squares in the shape
+    // E.g. For the “I” block horizontally: [ (0,0), (1,0), (2,0), (3,0) ]
+    pub offsets: Vec<(i32, i32)>,
+    pub tile: TetronimoTypeType
 }

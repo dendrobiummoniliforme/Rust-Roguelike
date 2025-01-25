@@ -1,28 +1,32 @@
 use rltk::{Point, Rltk, VirtualKeyCode};
 use specs::prelude::*;
-use crate::RunState;
+use crate::{tetronimo, RunState, TetrisBlock, TetronimoTypeType};
 
 use super::{Position, Player, Viewshed, TileType, State, Map};
 use std::cmp::{min, max};
 
-pub fn try_move_player(delta_x: i32, delta_y: i32, ecs: &mut World) {
+pub fn try_move_player(dx: i32, dy: i32, ecs: &mut World) {
+    let map = ecs.fetch::<Map>();
     let mut positions = ecs.write_storage::<Position>();
-    let mut players = ecs.write_storage::<Player>();
-    let mut point_pos = ecs.write_resource::<Point>();
-    let map = ecs.fetch::<Map>(); // Feels odd to couple map to the player like this.
+    let mut blocks = ecs.write_storage::<TetrisBlock>();
 
-    for (_player, pos) in (&mut players, &mut positions).join() {
-        let destination_idx = map.xy_idx(pos.x + delta_x, pos.y + delta_y);
+    for (pos, block) in (&mut positions, &mut blocks).join() {
+        // Check if ANY of the squares would collide
+        let mut blocked = false;
+        for (ox, oy) in &block.offsets {
+            let new_x = pos.x + ox + dx;
+            let new_y = pos.y + oy + dy;
+            let idx = map.xy_idx(new_x, new_y);
+            if map.tiles[idx] == TileType::Wall {
+                blocked = true;
+                break;
+            }
+        }
 
-        // Update the point's position.
-        // This is a point that is following the player's position.
-        point_pos.x = pos.x;
-        point_pos.y = pos.y;
-
-        // If we are not on a wall.
-        if map.tiles[destination_idx] != TileType::Wall {
-            pos.x = min(79, max(0, pos.x + delta_x));
-            pos.y = min(79, max(0, pos.y + delta_y));
+        // If not blocked, move the whole piece
+        if !blocked {
+            pos.x += dx;
+            pos.y += dy;
         }
     }
 }
@@ -41,13 +45,15 @@ pub fn player_input(gs: &mut State, ctx: &mut Rltk) -> RunState {
             VirtualKeyCode::Numpad6 |
             VirtualKeyCode::L => try_move_player(1, 0, &mut gs.ecs),
 
-            VirtualKeyCode::Up |
-            VirtualKeyCode::Numpad8 |
-            VirtualKeyCode::K => try_move_player(0, -1, &mut gs.ecs),
+            // VirtualKeyCode::Up |
+            // VirtualKeyCode::Numpad8 |
+            // VirtualKeyCode::K => try_move_player(0, -1, &mut gs.ecs),
 
             VirtualKeyCode::Down |
             VirtualKeyCode::Numpad2 |
             VirtualKeyCode::J => try_move_player(0, 1, &mut gs.ecs),
+
+            VirtualKeyCode::A => rotate_player(&mut gs.ecs),
 
             _ => { 
                 return RunState::Paused 
@@ -55,4 +61,33 @@ pub fn player_input(gs: &mut State, ctx: &mut Rltk) -> RunState {
         },
     }
     RunState::Running
+}
+
+fn rotate_player(ecs: &mut World) {
+    let mut tetronimo = ecs.write_storage::<TetrisBlock>();
+    let mut positions = ecs.write_storage::<Position>();
+    let map = ecs.fetch::<Map>();
+
+    for (pos, tetronimo) in (&mut positions, &mut tetronimo).join() {
+        let mut blocked = false;
+        for (ox, oy) in tetronimo.offsets.iter_mut() {
+            let new_x = pos.x + oy.clone();
+            let new_y = pos.y - (ox.clone());
+            // let new_x = pos.x + ox + dx;
+            // let new_y = pos.y + oy + dy;
+            let idx = map.xy_idx(new_x, new_y);
+            //let idx_tetris = tetronimo.xy_idx(new_x, new_y);
+            if map.tiles[idx] == TileType::Wall {
+                blocked = true;
+                break;
+            }
+        } 
+        for (ox, oy) in tetronimo.offsets.iter_mut() {
+            if !blocked {
+                let old_x = *ox;
+                *ox = *oy;
+                *oy = -old_x;
+            }
+        }
+    }
 }
