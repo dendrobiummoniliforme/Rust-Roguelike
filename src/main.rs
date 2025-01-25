@@ -13,10 +13,13 @@ mod visibility_system;
 pub use visibility_system::VisibilitySystem;
 mod monster_ai_system;
 use monster_ai_system::*;
+mod tetronimo_spawn_system;
+pub use tetronimo_spawn_system::*;
 
 struct State {
     pub ecs: World,
-    pub runstate: RunState
+    pub runstate: RunState,
+    pub tick_count: u32,
 } // Braced struct declarations are not followed by a semi-colon.
 
 #[derive(PartialEq, Copy, Clone)]
@@ -27,104 +30,79 @@ pub enum RunState {
 
 impl State {
     fn run_systems(&mut self) {
-        let mut vis = VisibilitySystem{};
-        let mut mob = MonsterAI{};
-        vis.run_now(&self.ecs);
-        mob.run_now(&self.ecs);
+        //let mut vis = VisibilitySystem{};
+        //let mut mob = MonsterAI{};
+        let mut tetronimo = TetronimoSpawnSystem{};
+        //vis.run_now(&self.ecs);
+        //mob.run_now(&self.ecs);
+        tetronimo.run_now(&self.ecs);
         self.ecs.maintain(); // Apply changes to the world now.
     }
 }
+const TETRIS_BLOCK: Tetronimo = Tetronimo {
+    shape: [
+        [Some(TileType::Floor), Some(TileType::Floor), None, None],
+        [None, Some(TileType::Floor), None, None],
+        [None, Some(TileType::Floor), None, None],
+        [None, None, None, None],
+    ],
+    x: 5,
+    y: 5
+};
 
 impl GameState for State {
-    // For the Struct State, implement the Tick function from
-    // the trait GameState.
     fn tick(&mut self, ctx: &mut Rltk) {
         ctx.cls(); // Clear the active terminal.
-
-        if self.runstate == RunState::Running {
-            self.run_systems();
-            self.runstate = RunState::Paused;
-        } else {
-            self.runstate = player_input(self, ctx);
+        
+        let speed_mod = 2;
+        self.tick_count += 1 * speed_mod;
+        if self.tick_count % 10 == 0 {
+            try_move_player(0, 1, &mut self.ecs);
         }
+        self.runstate = player_input(self, ctx);
 
-        draw_map(&self.ecs, ctx);
+        draw_map(&self.ecs, ctx);    // Assuming you have a mutable reference to the Rltk context
 
         let positions = self.ecs.read_storage::<Position>();
         let renderables = self.ecs.read_storage::<Renderable>();
-        let map = self.ecs.fetch::<Map>();
-    
-        // Join these two components.
-        // Literally a union.
-        // It's implicit Union, but it works, as each Entity already has a
-        // unique id tied to it from the build step.
+        //let map = self.ecs.fetch::<Map>();
+
         for (pos, render) in (&positions, &renderables).join() {
-            let idx = map.xy_idx(pos.x, pos.y);
-            if map.visible_tiles[idx] {
-                ctx.set(pos.x, pos.y, render.fg, render.bg, render.glyph);
-            }
+            ctx.set(pos.x, pos.y, render.fg, render.bg, render.glyph);
         }
     }
 }
 
 fn main() -> rltk::BError {
     use rltk::RltkBuilder;
-    let context = RltkBuilder::simple80x50()
+    let context = RltkBuilder::simple(50, 50)?
         .with_title("Roguelike Tutorial")
         .build()?;
-    let mut gs = State { 
-        ecs: World::new(),
-        runstate: RunState::Running,
-    };
+    let mut gs = State { ecs: World::new(), runstate: RunState::Running, tick_count: 0 };
 
     // Register components.
     gs.ecs.register::<Position>();
     gs.ecs.register::<Renderable>();
     gs.ecs.register::<Player>();
-    gs.ecs.register::<Viewshed>();
-    gs.ecs.register::<Monster>();
     gs.ecs.register::<Name>();
  
     // Add map.
-    let map: Map = Map::new_map_rooms_and_corridors();
+    let map: Map = Map::new_tetris_map();
     let (player_x, player_y) = map.rooms[0].center();
 
-    // Player Entity.
-    gs.ecs.create_entity()
-    .with(Position { x: player_x, y: player_y })
-    .with(Renderable {
-        glyph: rltk::to_cp437('@'),
-        fg: RGB::named(rltk::YELLOW),
-        bg: RGB::named(rltk::BLACK),
-    })
-    .with(Player {})
-    .with(Name { name: "Player".to_string() })
-    .with(Viewshed { visible_tiles: Vec::new(), dirty: true, range: 8 })
-    .build();
-    
-    // Create and render Monsters
-    let mut rng = rltk::RandomNumberGenerator::new();
-    for (i, room) in map.rooms.iter().skip(1).enumerate() { // Skip the player's room
-        let (x, y) = room.center();
-
-        let glyph: rltk::FontCharType;
-        let name: String;
-        let roll = rng.roll_dice(1, 2);
-        match roll {
-            1 => { glyph = rltk::to_cp437('g'); name = "Goblin".to_string(); }
-            _ => { glyph = rltk::to_cp437('o'); name = "Orc".to_string(); }
-        }
-
+    for i in 0..4 { // Create a line of 4 entities
         gs.ecs.create_entity()
-        .with(Position { x, y })
+        // need a tetris block component
+        // need to the attach a tetris block to a player by spawning it in
+        // we can then manipulate the player's block while it is not at the bottom of the screen
+        .with(Position { x: player_x + i, y: player_y }) // Adjust y position for each entity
         .with(Renderable {
-            glyph,
-            fg: RGB::named(rltk::RED),
+            glyph: rltk::to_cp437('◘'),
+            fg: RGB::named(rltk::VIOLET_RED),
             bg: RGB::named(rltk::BLACK),
         })
-        .with(Viewshed { visible_tiles: Vec::new(), range: 8, dirty: true })
-        .with(Monster {})
-        .with(Name { name: format!("{} #{}", &name, i) })
+        .with(Player {})
+        .with(Name { name: format!("Line {}", i + 1) }) // Unique name for each entity
         .build();
     }
 

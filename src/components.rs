@@ -2,6 +2,8 @@ use specs::{prelude::*, rayon::string};
 use specs_derive::*;
 use rltk::RGB;
 
+use crate::TileType;
+
 #[derive(Component, Debug)]
 pub struct Player {}
 
@@ -32,4 +34,11 @@ pub struct Monster {}
 #[derive(Component, Debug)]
 pub struct Name {
     pub name: String
+}
+
+#[derive(Component)]
+pub struct Tetronimo {
+    pub shape: [[Option<TileType>; 4]; 4],
+    pub x: i32,
+    pub y: i32,
 }

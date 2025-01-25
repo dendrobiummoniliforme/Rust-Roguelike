@@ -8,11 +8,10 @@ use std::cmp::{min, max};
 pub fn try_move_player(delta_x: i32, delta_y: i32, ecs: &mut World) {
     let mut positions = ecs.write_storage::<Position>();
     let mut players = ecs.write_storage::<Player>();
-    let mut viewsheds = ecs.write_storage::<Viewshed>();
     let mut point_pos = ecs.write_resource::<Point>();
     let map = ecs.fetch::<Map>(); // Feels odd to couple map to the player like this.
 
-    for (_player, pos, viewshed) in (&mut players, &mut positions, &mut viewsheds).join() {
+    for (_player, pos) in (&mut players, &mut positions).join() {
         let destination_idx = map.xy_idx(pos.x + delta_x, pos.y + delta_y);
 
         // Update the point's position.
@@ -25,8 +24,6 @@ pub fn try_move_player(delta_x: i32, delta_y: i32, ecs: &mut World) {
             pos.x = min(79, max(0, pos.x + delta_x));
             pos.y = min(79, max(0, pos.y + delta_y));
         }
-
-        viewshed.dirty = true;
     }
 }
 
