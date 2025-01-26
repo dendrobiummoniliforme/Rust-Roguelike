@@ -13,6 +13,8 @@ mod visibility_system;
 pub use visibility_system::VisibilitySystem;
 mod monster_ai_system;
 use monster_ai_system::*;
+mod map_indexing_system;
+pub use map_indexing_system::*;
 
 struct State {
     pub ecs: World,
@@ -28,9 +30,11 @@ pub enum RunState {
 impl State {
     fn run_systems(&mut self) {
         let mut vis = VisibilitySystem{};
-        let mut mob = MonsterAI{};
         vis.run_now(&self.ecs);
+        let mut mob = MonsterAI{};
         mob.run_now(&self.ecs);
+        let mut map_index = MapIndexingSystem{};
+        map_index.run_now(&self.ecs);
         self.ecs.maintain(); // Apply changes to the world now.
     }
 }
@@ -84,6 +88,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Viewshed>();
     gs.ecs.register::<Monster>();
     gs.ecs.register::<Name>();
+    gs.ecs.register::<BlocksTile>();
  
     // Add map.
     let map: Map = Map::new_map_rooms_and_corridors();
@@ -125,6 +130,7 @@ fn main() -> rltk::BError {
         .with(Viewshed { visible_tiles: Vec::new(), range: 8, dirty: true })
         .with(Monster {})
         .with(Name { name: format!("{} #{}", &name, i) })
+        .with(BlocksTile {})
         .build();
     }
 

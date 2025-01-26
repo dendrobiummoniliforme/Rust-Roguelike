@@ -19,6 +19,7 @@ pub struct Map {
     pub height: i32,
     pub revealed_tiles: Vec<bool>,
     pub visible_tiles: Vec<bool>,
+    pub blocked: Vec<bool>,
 }
 
 impl Map {
@@ -51,7 +52,8 @@ impl Map {
             width : 80,
             height: 50,
             revealed_tiles : vec![false; 80*50],
-            visible_tiles : vec![false; 80*50]
+            visible_tiles : vec![false; 80*50],
+            blocked: vec![false; 80*50],
         };
         
         const MAX_ROOMS: i32 = 30;
@@ -95,6 +97,13 @@ impl Map {
         map
     }  
 
+    /// Block a tile if it is a wall.
+    pub fn populate_blocked(&mut self) {
+        for (i, tile) in self.tiles.iter().enumerate() {
+            self.blocked[i] = *tile == TileType::Wall;
+        }
+    }
+
     fn apply_horizontal_tunnel(&mut self, x1: i32, x2: i32, y: i32) {
         for x in min(x1, x2) ..= max(x1, x2) {
             let idx = self.xy_idx(x, y);
@@ -116,10 +125,10 @@ impl Map {
     /// Takes an index and calculates if it can be entered.
     fn is_exit_valid(&self, x: i32, y: i32) -> bool {
         if x < 1 || x > self.width - 1 || y < 1 || y > self.height - 1 {
-            return false
+            return false;
         }
         let idx = self.xy_idx(x, y);
-        self.tiles[idx as usize] != TileType::Wall
+        !self.blocked[idx]
     }
 }
 
@@ -153,6 +162,20 @@ impl BaseMap for Map {
         if self.is_exit_valid(x, y + 1) {
             exits.push((idx + w, 1.0))
         };
+
+        // Diagonal directions.
+        if self.is_exit_valid(x - 1, y - 1) {
+            exits.push(((idx - w) - 1, 1.45))
+        }
+        if self.is_exit_valid(x + 1, y - 1) {
+            exits.push(((idx - w) + 1, 1.45))
+        }
+        if self.is_exit_valid(x - 1, y + 1) {
+            exits.push(((idx + w) - 1, 1.45))
+        }
+        if self.is_exit_valid(x + 1, y + 1) {
+            exits.push(((idx + w) + 1, 1.45))
+        }
 
         exits
     }

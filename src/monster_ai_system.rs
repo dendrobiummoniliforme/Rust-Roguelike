@@ -26,26 +26,24 @@ impl<'a> System<'a> for MonsterAI {
             mut monster_pos
         ) = data;
 
-        for (
-            viewshed, 
-            _monster, 
-            name, 
-            monster_pos
-        ) in (
-            &mut viewshed, 
-            &monster, 
-            &name, 
-            &mut monster_pos
-        ).join() {
+        for (viewshed, _monster, name, monster_pos) in (&mut viewshed, &monster, &name, &mut monster_pos).join() {
             // In Rust, ReadExpect<'a, T> (from specs) is essentially a smart pointer (it implements Deref<Target = T>). 
             // This means player_pos is not itself a Point, but rather a wrapper that can be dereferenced to a Point.
             // *player_pos uses the Deref implementation to get the underlying Point value.
             // Then &*player_pos takes a reference to that Point.
             // 1. for each tick we check to see if a player is in the monster's view
             if viewshed.visible_tiles.contains(&*player_pos) {
-                // Helper log function that outputs correctly to a browser or terminal
-                // depending on the environment.
-                console::log(&format!("{} shouts insults", name.name));
+                let distance = rltk::DistanceAlg::Pythagoras.distance2d(
+                    Point::new(monster_pos.x, monster_pos.y), 
+                    *player_pos
+                );
+
+                if distance < 1.5 {
+                    // Helper log function that outputs correctly to a browser or terminal
+                    // depending on the environment.
+                    console::log(&format!("{} shouts insults", name.name));
+                    return;
+                }
 
                 // 2. if it is we perform an A* Search to find a path to the player
                 let path = rltk::a_star_search(
