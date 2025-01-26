@@ -15,26 +15,40 @@ mod monster_ai_system;
 use monster_ai_system::*;
 mod map_indexing_system;
 pub use map_indexing_system::*;
+mod melee_combat_system;
+pub use melee_combat_system::*;
+mod damage_system;
+pub use damage_system::*;
 
 struct State {
     pub ecs: World,
-    pub runstate: RunState
 } // Braced struct declarations are not followed by a semi-colon.
 
 #[derive(PartialEq, Copy, Clone)]
 pub enum RunState {
-    Paused,
-    Running
+    AwaitingInput,
+    PreRun,
+    PlayerTurn,
+    MonsterTurn,
 }
 
 impl State {
     fn run_systems(&mut self) {
         let mut vis = VisibilitySystem{};
         vis.run_now(&self.ecs);
+
         let mut mob = MonsterAI{};
         mob.run_now(&self.ecs);
+
         let mut map_index = MapIndexingSystem{};
         map_index.run_now(&self.ecs);
+
+        let mut melee_combat = MeleeCombatSystem{};
+        melee_combat.run_now(&self.ecs);
+
+        let mut damage = DamageSystem{};
+        damage.run_now(&self.ecs);
+        
         self.ecs.maintain(); // Apply changes to the world now.
     }
 }
@@ -45,13 +59,34 @@ impl GameState for State {
     fn tick(&mut self, ctx: &mut Rltk) {
         ctx.cls(); // Clear the active terminal.
 
-        if self.runstate == RunState::Running {
-            self.run_systems();
-            self.runstate = RunState::Paused;
-        } else {
-            self.runstate = player_input(self, ctx);
+        let mut new_runstate;
+        {
+            let runstate = self.ecs.fetch::<RunState>();
+            new_runstate = *runstate;
+        }
+        match new_runstate {
+            RunState::PreRun => {
+                self.run_systems();
+                new_runstate = RunState::AwaitingInput;
+            }
+            RunState::AwaitingInput => {
+                new_runstate = player_input(self, ctx);
+            }
+            RunState::PlayerTurn => {
+                self.run_systems();
+                new_runstate = RunState::MonsterTurn;
+            }
+            RunState::MonsterTurn => {
+                self.run_systems();
+                new_runstate = RunState::AwaitingInput;
+            }
+        }
+        {
+            let mut run_writer = self.ecs.write_resource::<RunState>();
+            *run_writer = new_runstate;
         }
 
+        damage_system::delete_the_dead(&mut self.ecs);
         draw_map(&self.ecs, ctx);
 
         let positions = self.ecs.read_storage::<Position>();
@@ -78,7 +113,6 @@ fn main() -> rltk::BError {
         .build()?;
     let mut gs = State { 
         ecs: World::new(),
-        runstate: RunState::Running,
     };
 
     // Register components.
@@ -89,13 +123,16 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Monster>();
     gs.ecs.register::<Name>();
     gs.ecs.register::<BlocksTile>();
+    gs.ecs.register::<CombatStats>();
+    gs.ecs.register::<WantsToMelee>();
+    gs.ecs.register::<SufferDamage>();
  
     // Add map.
     let map: Map = Map::new_map_rooms_and_corridors();
     let (player_x, player_y) = map.rooms[0].center();
 
     // Player Entity.
-    gs.ecs.create_entity()
+    let player_entity = gs.ecs.create_entity()
     .with(Position { x: player_x, y: player_y })
     .with(Renderable {
         glyph: rltk::to_cp437('@'),
@@ -105,6 +142,7 @@ fn main() -> rltk::BError {
     .with(Player {})
     .with(Name { name: "Player".to_string() })
     .with(Viewshed { visible_tiles: Vec::new(), dirty: true, range: 8 })
+    .with(CombatStats { max_hp: 30, hp: 30, defense: 2, power: 5 })
     .build();
     
     // Create and render Monsters
@@ -131,6 +169,7 @@ fn main() -> rltk::BError {
         .with(Monster {})
         .with(Name { name: format!("{} #{}", &name, i) })
         .with(BlocksTile {})
+        .with(CombatStats { max_hp: 16, hp: 16, defense: 1, power: 4 })
         .build();
     }
 
@@ -139,6 +178,8 @@ fn main() -> rltk::BError {
     // Insert a point that follows the player around.
     // This is used to enable interaction with monsters.
     gs.ecs.insert(Point::new(player_x, player_y));
+    gs.ecs.insert(player_entity);
+    gs.ecs.insert(RunState::PreRun);
 
     rltk::main_loop(context, gs)
 }
