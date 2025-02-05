@@ -20,14 +20,14 @@ impl <'a> System<'a> for MapIndexingSystem {
         // Clear all entities that are in the maps list of known
         // tile content.
         map.clear_content_index();
-
+        
         for (position, entity) in (&position, &entities).join() {
             let idx = map.xy_idx(position.x, position.y);
 
             // Check to see if an entity has a BlocksTile component.
             // if it does, update the maps blocked list.
             let associated_blockers: Option<&BlocksTile> = blockers.get(entity);
-            if let Some(associated_blockers) = associated_blockers {
+            if let Some(_) = associated_blockers {
                 map.blocked[idx] = true;
             }
 
