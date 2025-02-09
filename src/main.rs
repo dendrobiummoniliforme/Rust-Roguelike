@@ -14,6 +14,8 @@ mod visibility_system;
 pub use visibility_system::VisibilitySystem;
 mod monster_ai_system;
 use monster_ai_system::*;
+mod spawner;
+pub use spawner::*;
 mod map_indexing_system;
 pub use map_indexing_system::*;
 mod melee_combat_system;
@@ -138,50 +140,9 @@ fn main() -> rltk::BError {
     // Add map.
     let map: Map = Map::new_map_rooms_and_corridors();
     let (player_x, player_y) = map.rooms[0].center();
-
-    // Player Entity.
-    let player_entity = gs.ecs.create_entity()
-    .with(Position { x: player_x, y: player_y })
-    .with(Renderable {
-        glyph: rltk::to_cp437('@'),
-        fg: RGB::named(rltk::YELLOW),
-        bg: RGB::named(rltk::BLACK),
-    })
-    .with(Player {})
-    .with(Name { name: "Player".to_string() })
-    .with(Viewshed { visible_tiles: Vec::new(), dirty: true, range: 8 })
-    .with(CombatStats { max_hp: 30, hp: 30, defense: 2, power: 5 })
-    .build();
-    
-    // Create and render Monsters
-    let mut rng = rltk::RandomNumberGenerator::new();
-    for (i, room) in map.rooms.iter().skip(1).enumerate() { // Skip the player's room
-        let (x, y) = room.center();
-
-        let glyph: rltk::FontCharType;
-        let name: String;
-        let roll = rng.roll_dice(1, 2);
-        match roll {
-            1 => { glyph = rltk::to_cp437('g'); name = "Goblin".to_string(); }
-            _ => { glyph = rltk::to_cp437('o'); name = "Orc".to_string(); }
-        }
-
-        gs.ecs.create_entity()
-        .with(Position { x, y })
-        .with(Renderable {
-            glyph,
-            fg: RGB::named(rltk::RED),
-            bg: RGB::named(rltk::BLACK),
-        })
-        .with(Viewshed { visible_tiles: Vec::new(), range: 8, dirty: true })
-        .with(Monster {})
-        .with(Name { name: format!("{} #{}", &name, i) })
-        .with(BlocksTile {})
-        .with(CombatStats { max_hp: 16, hp: 16, defense: 1, power: 4 })
-        .build();
-    }
-
     gs.ecs.insert(map);
+    
+    let player_entity = spawner::player(&mut gs.ecs, player_x, player_y);
 
     // Insert a point that follows the player around.
     // This is used to enable interaction with monsters.
@@ -189,6 +150,11 @@ fn main() -> rltk::BError {
     gs.ecs.insert(player_entity);
     gs.ecs.insert(RunState::PreRun);
     gs.ecs.insert(GameLog { entries: vec!["Welcome to Rusty Roguelike".to_string()] });
+    gs.ecs.insert(rltk::RandomNumberGenerator::new());
+    for room in map.rooms.iter().skip(1) {
+        let (x, y) = room.center();
+        spawner::random_monster(&mut gs.ecs, x, y);
+    }
 
     rltk::main_loop(context, gs)
 }
