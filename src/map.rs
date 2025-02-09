@@ -1,4 +1,4 @@
-use rltk::{Point, BaseMap, Algorithm2D, RandomNumberGenerator, Rltk, RGB};
+use rltk::{Algorithm2D, BaseMap, Point, RandomNumberGenerator, Rltk, RGB, RGBA};
 use specs::Entity;
 use super::{Rect, World};
 use std::cmp::{max, min};
@@ -17,6 +17,7 @@ pub enum TileType {
     Floor,
 }
 
+#[derive(Default)]
 pub struct Map {
     pub tiles: Vec<TileType>,
     pub rooms: Vec<Rect>,
@@ -231,6 +232,7 @@ pub fn draw_map(ecs: &World, ctx: &mut Rltk) {
                 fg = fg.to_greyscale()
             }
             ctx.set(x, y, fg, RGB::from_f32(0.0, 0.0, 0.0), glyph);
+
         }
 
         // Move the coordinates

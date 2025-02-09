@@ -1,5 +1,5 @@
 use gamelog::GameLog;
-use rltk::{GameState, Point, Rltk, RGB};
+use rltk::{GameState, Point, Rltk, Sprite, SpriteSheet, RGB};
 use specs::prelude::*;
 
 mod components;
@@ -116,6 +116,7 @@ impl GameState for State {
 
 fn main() -> rltk::BError {
     use rltk::RltkBuilder;
+
     let mut context = RltkBuilder::simple80x50()
         .with_title("Roguelike Tutorial")
         .build()?;
@@ -136,9 +137,15 @@ fn main() -> rltk::BError {
     gs.ecs.register::<CombatStats>();
     gs.ecs.register::<WantsToMelee>();
     gs.ecs.register::<SufferDamage>();
+
+    gs.ecs.insert(rltk::RandomNumberGenerator::new());
  
     // Add map.
     let map: Map = Map::new_map_rooms_and_corridors();
+    for room in map.rooms.iter().skip(1) {
+        let (x, y) = room.center();
+        spawner::random_monster(&mut gs.ecs, x, y);
+    }
     let (player_x, player_y) = map.rooms[0].center();
     gs.ecs.insert(map);
     
@@ -150,11 +157,6 @@ fn main() -> rltk::BError {
     gs.ecs.insert(player_entity);
     gs.ecs.insert(RunState::PreRun);
     gs.ecs.insert(GameLog { entries: vec!["Welcome to Rusty Roguelike".to_string()] });
-    gs.ecs.insert(rltk::RandomNumberGenerator::new());
-    for room in map.rooms.iter().skip(1) {
-        let (x, y) = room.center();
-        spawner::random_monster(&mut gs.ecs, x, y);
-    }
 
     rltk::main_loop(context, gs)
 }
