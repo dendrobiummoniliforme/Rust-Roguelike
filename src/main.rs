@@ -130,7 +130,7 @@ let mut context = RltkBuilder::new()
     .with_tile_dimensions(16, 16)
     .with_title("RLTK Example 07 - Tiles")
     .with_font("example_tiles.jpg", 16, 16)
-    .with_simple_console(80, 50, "example_tiles.jpg")
+    .with_simple_console(80, 50, "example_tiles.jpg") // Because the with_ functions prefix the path with `resources`.
     .with_sparse_console(80, 50, "example_tiles.jpg")
     .build()?;
 
