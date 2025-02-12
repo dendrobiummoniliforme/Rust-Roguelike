@@ -117,11 +117,27 @@ impl GameState for State {
 fn main() -> rltk::BError {
     use rltk::RltkBuilder;
 
-    let mut context = RltkBuilder::simple80x50()
-        .with_title("Roguelike Tutorial")
-        .build()?;
-    context.with_post_scanlines(true);
+    // let mut context = RltkBuilder::simple80x50()
+    //     .with_title("Roguelike Tutorial")
+    //     .build()?;
+    // context.with_post_scanlines(true);
+    // context.screen_burn_color(RGB::named(rltk::MAGENTA));
+
+
+
+let mut context = RltkBuilder::new()
+    .with_dimensions(80, 50)
+    .with_tile_dimensions(16, 16)
+    .with_title("RLTK Example 07 - Tiles")
+    .with_font("example_tiles.jpg", 16, 16)
+    .with_simple_console(80, 50, "example_tiles.jpg")
+    .with_sparse_console(80, 50, "example_tiles.jpg")
+    .build()?;
+
+        context.with_post_scanlines(true);
     context.screen_burn_color(RGB::named(rltk::MAGENTA));
+
+
     let mut gs = State { 
         ecs: World::new(),
     };

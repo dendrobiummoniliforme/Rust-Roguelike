@@ -221,11 +221,11 @@ pub fn draw_map(ecs: &World, ctx: &mut Rltk) {
             match tile {
                 TileType::Floor => {
                     fg = RGB::from_f32(0.0, 0.5, 0.5);
-                    glyph = rltk::to_cp437('.');
+                    glyph = 0; //rltk::to_cp437('.');
                 }
                 TileType::Wall => {
                     fg = RGB::from_f32(0.0, 1.0, 0.0);
-                    glyph = rltk::to_cp437('#');
+                    glyph = 1; //rltk::to_cp437('#');
                 }
             }
             if !map.visible_tiles[idx] {
