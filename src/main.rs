@@ -143,8 +143,7 @@ fn main() -> rltk::BError {
     // Add map.
     let map: Map = Map::new_map_rooms_and_corridors();
     for room in map.rooms.iter().skip(1) {
-        let (x, y) = room.center();
-        spawner::random_monster(&mut gs.ecs, x, y);
+        spawner::spawn_room(&mut gs.ecs, room);
     }
     let (player_x, player_y) = map.rooms[0].center();
     gs.ecs.insert(map);

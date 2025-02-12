@@ -3,9 +3,9 @@ use specs::Entity;
 use super::{Rect, World};
 use std::cmp::{max, min};
 
-const MAPHEIGHT: usize = 43;
-const MAPWIDTH: usize = 80;
-const MAPCOUNT: usize = MAPHEIGHT * MAPWIDTH;
+pub const MAPHEIGHT: usize = 43;
+pub const MAPWIDTH: usize = 80;
+pub const MAPCOUNT: usize = MAPHEIGHT * MAPWIDTH;
 
 // Adding PartialEq lets us compare two tile types to see if they match
 // that is, tile1 == tile2. I assume this means that equality on objects
