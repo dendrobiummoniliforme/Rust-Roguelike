@@ -119,6 +119,7 @@ fn main() -> rltk::BError {
 
     let mut context = RltkBuilder::simple80x50()
         .with_title("Roguelike Tutorial")
+        .with_fullscreen(true)
         .build()?;
     context.with_post_scanlines(true);
     context.screen_burn_color(RGB::named(rltk::MAGENTA));
@@ -137,6 +138,8 @@ fn main() -> rltk::BError {
     gs.ecs.register::<CombatStats>();
     gs.ecs.register::<WantsToMelee>();
     gs.ecs.register::<SufferDamage>();
+    gs.ecs.register::<Item>();
+    gs.ecs.register::<Potion>();
 
     gs.ecs.insert(rltk::RandomNumberGenerator::new());
  
